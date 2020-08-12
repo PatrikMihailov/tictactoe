@@ -1,4 +1,5 @@
 let rows=0;
+let win_condition = 0;
 const color_green = "#a6ff4d";
 const color_red = "#ff6600";
 const color_blue = "#33ccff";
@@ -37,67 +38,163 @@ class game {
 
     res_validation(played_cell_x, played_cell_y){
         let round_won = false;
-        let win_arr = new Array(rows);
+        let win_arr = [];
+        let check_arr = [];
+        let cons_signs_r = 0;
+        let cons_signs_c = 0;
+        let cons_signs_d = 0;
+        let cons_signs_ad = 0;
         let i =0, j=0, k =0;
         //logika za koloni
-        for(i = 0; i < rows; i++){          
-            if(this.game_state[i][played_cell_x] != this.curr_player){
-                break; 
-            }
-            if(i == rows-1){
-                for(k = 0; k<rows; k++){
-                    win_arr[k] = ((k*rows)+played_cell_x); 
+        if(round_won === false){
+            for(i = 0; i < rows; i++){
+                if(this.game_state[i][played_cell_x] === this.curr_player){
+                    let exists = win_arr.includes(Number(((i*rows) + played_cell_x)));
+                    if(!exists){
+                        cons_signs_c++;
+                        if(cons_signs_c > win_condition){
+                            break;
+                        }
+                        win_arr.push((i*rows) + played_cell_x)
+                    }
+                } else if ((this.game_state[i][played_cell_x] !== this.curr_player || this.game_state[i][played_cell_x] === "") && cons_signs_c !== win_condition){
+                    win_arr = [];
+                    cons_signs_c = 0;
                 }
-                round_won = true;
+                if(cons_signs_c === win_condition && win_arr.includes("") === false && win_arr.length === win_condition){ 
+                    round_won = true;
+                }
             }
         }
         //logika za redove
-        for(i = 0; i < rows; i++){
-            if(this.game_state[played_cell_y][i] != this.curr_player){
-                break;
-            }
-            if(i == rows-1){
-                for(k = 0; k<rows; k++){
-                        win_arr[k] = ((played_cell_y*rows)+k); 
-                    }
-                round_won = true;
-            }
-        }
-        //logika za diagonal
-        if(played_cell_x == played_cell_y){
+        if(round_won === false){
             for(i = 0; i < rows; i++){
-                if(this.game_state[i][i] != this.curr_player){
-                    break;
-                }
-                if(i == rows-1){
-                    for(k = 0; k<rows; k++){
-                        win_arr[k] = ((k*rows)+k); 
+                if(this.game_state[played_cell_y][i] === this.curr_player){
+                    let exists = win_arr.includes(Number(((played_cell_y*rows) + i)));
+                    if(!exists){
+                        cons_signs_r++;
+                        if(cons_signs_r > win_condition){
+                            break;
+                        }
+                        win_arr.push((played_cell_y*rows) + i);
                     }
+                } else if ((this.game_state[played_cell_y][i] !== this.curr_player || this.game_state[played_cell_y][i] === "") && cons_signs_r !== win_condition){
+                    win_arr = [];
+                    cons_signs_r = 0;
+                }
+                //console.log("win_arr.length: " + win_arr.length + "  win_arr.includes(): " + win_arr.includes(""));
+                if(cons_signs_r === win_condition && win_arr.includes("") === false && win_arr.length === win_condition){ 
                     round_won = true;
                 }
             }
         }
+
+        // logika za diagonal
+        for(i = 0; i < rows; i++) {
+            for(j = 0; j < rows; j++) {
+                check_arr.push(this.game_state[i][j]);
+            }
+        }
+        
+        // console.log(check_arr);
+
+        if(round_won === false){
+            // for(i = 0; i < rows; i++){
+            //     for(j = 0; j <= rows*rows; j += rows){
+            //         console.log("i: " + i + "  j: " + j);
+            //         if(check_arr[j] === this.curr_player){
+            //             let exists = win_arr.includes(Number(j));
+            //             if(!exists){
+            //                 cons_signs_d++;
+            //                 win_arr.push(j);
+            //             } else if (check_arr[j] !== this.curr_player && cons_signs_d !== win_condition){
+            //                 win_arr = [];
+            //                 cons_signs_d = 0;
+            //             } 
+            //             if(cons_signs_d === win_condition && win_arr.includes("") === false && win_arr.length === win_condition){ 
+            //                 round_won = true;
+            //             }
+            //         }
+            //     }
+            // }
+            // for(i = 0; i < rows; i++){
+            //     for(j = 0; j < rows; j++){
+            //         if(this.game_state[i][i+j])
+            //     }
+            //     if(this.game_state[i][i+played_cell_x] === this.curr_player){
+            //         console.log("vliza");
+            //         let exists = win_arr.includes(Number((((played_cell_y*rows) + played_cell_x))));
+            //         if(!exists){
+            //             cons_signs_d++;
+            //             win_arr.push((played_cell_y*rows) + played_cell_x);
+            //         }
+            //     } else if (this.game_state[i][i+played_cell_x] !== this.curr_player && cons_signs_d !== win_condition){
+            //         win_arr = [];
+            //         cons_signs_d = 0;
+            //     }
+            //     //console.log("win_arr.length: " + win_arr.length + "  win_arr.includes(): " + win_arr.includes("") + "  cons signs: " + cons_signs_d);
+            //     if(cons_signs_d === win_condition && win_arr.includes("") === false && win_arr.length === win_condition){ 
+            //         round_won = true;
+            //     }
+            // }
+        }
+
+        // if(round_won === false){
+        //     for(i = 0; i < rows; i++){
+        //         for(j = played_cell_x; j < rows; j++){
+        //             if(this.game_state[i][j] === this.curr_player){    
+        //                 cons_signs++;
+        //             } else if (this.game_state[i][j] !== this.curr_player && cons_signs !== win_condition){
+        //                 for(k = 0; k < win_condition; k++){
+        //                     win_arr[k] = "";
+        //                 }
+        //                 cons_signs = 0;
+        //             }
+        //         }
+                
+        //         if(cons_signs === win_condition){ 
+        //             for(j = 0, k = 0; k < win_condition; j++, k++){
+        //                 if(this.game_state[i][j+played_cell_x] !== ""){
+        //                     win_arr[k] = (j*rows) + j;
+        //                 } else {
+        //                     k--;
+        //                 }
+        //             }
+        //             round_won = true;
+        //         }
+        //     }
+        // }
         //logika za antidiagonal
-        if(played_cell_x + played_cell_y == rows - 1){
-            for(i = 0; i < rows; i++){
-                if(this.game_state[i][(rows-1)-i] != this.curr_player){
-                    break;
-                }
-                if(i == rows-1){
-                    for(k = 0; k<rows; k++){
-                        win_arr[k] = ((k*rows)+(rows-1)-k); 
-                    }
-                    round_won = true;
-                }
-            }
-        }
+        // if(round_won == false){
+        //     for(i = 0; i < rows; i++){
+        //         if(this.game_state[i][(rows-1)-i] === this.curr_player){        
+        //             cons_signs++;
+        //         } else if (this.game_state[i][(rows-1)-i] !== this.curr_player && cons_signs !== win_condition){
+        //             for(k = 0; k < win_condition; k++){
+        //                 win_arr[k] = "";
+        //             }
+        //             cons_signs = 0;
+        //         }
+        //         if(cons_signs === win_condition){ 
+        //             for(j = 0, k = 0; k < win_condition; j++, k++){
+        //                 if(this.game_state[j][(rows-1)-j] !== ""){
+        //                     win_arr[k] = (j*rows)+(rows-1)-j;
+        //                 } else {
+        //                     k--;
+        //                 }
+        //             }
+        //             round_won = true;
+        //         }
+        //     }
+        // }
         if (round_won == true){
-            this.status_display.innerHTML = this.winmsg();
-            for(k=0; k<rows; k++){
-                document.getElementById(win_arr[k]).style.backgroundColor = color_green;
-            }
-            this.is_game_active = false;
             console.log(win_arr);
+            this.status_display.innerHTML = this.winmsg();
+            console.log("nakraq: " + win_arr);
+            win_arr.forEach(element => {
+                document.getElementById(element).style.backgroundColor = color_green;
+            });
+            this.is_game_active = false;
             return;
         }
         let round_draw = true;
@@ -153,6 +250,9 @@ function create_grid() {
     while(rows <= 2 || !Number.isInteger(rows)){
         rows = Number(prompt("Table Size:"));
     }
+    while(win_condition <= 2 || !Number.isInteger(win_condition)){
+        win_condition = Number(prompt("Win Condition:"));
+    }
     let i = 0, j = 0;
     ex_game = new game();
       
@@ -178,14 +278,10 @@ function create_grid() {
 
 function matrix(rows, cols, defaultValue){
     var arr = [];
-    // Creates all lines:
     for(var i=0; i < rows; i++){
-        // Creates an empty line
         arr.push([]);
-        // Adds cols to the empty line:
         arr[i].push(new Array(cols));
         for(var j=0; j < cols; j++){
-          // Initializes:
           arr[i][j] = defaultValue;
         }
     }
