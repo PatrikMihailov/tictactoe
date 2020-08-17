@@ -1,8 +1,10 @@
 let rows = 0;
 let win_condition = 0;
+
 const color_green = "#a6ff4d";
 const color_red = "#ff6600";
 const color_blue = "#33ccff";
+
 class game {
     status_display;
     is_game_active;
@@ -15,8 +17,36 @@ class game {
         this.curr_player = "X";
         this.game_state = matrix(rows, rows, "");
     }
+
     winmsg = () => `${this.curr_player} won!`;
-    drawmsg = () => `its a draw!`;
+    drawmsg = () => `It's a draw!`;
+
+    init() {
+        document.getElementById('hidestart').style.display = "none";
+        var Container = document.getElementsByClassName("grid");
+        Container.innerHTML = '';
+        let i = 0, j = 0;
+        ex_game = new game();
+          
+        document.documentElement.style.setProperty("--columns-row", rows);
+        for (i = 0; i < rows ; i++) {
+            for(j = 0; j < rows; j++){
+                var div = document.createElement("div");
+                div.className = "cell";
+                div.id = (i*rows)+j;
+                div.setAttribute("cell-index", (i*rows)+j);
+                div.setAttribute("i", i);
+                div.setAttribute("j", j);
+                let wrapper = document.getElementsByClassName("grid");
+                wrapper[0].appendChild(div);
+            }
+        }
+        document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', (e) => {
+            ex_game.cell_click(e);
+            e.stopPropagation();
+        }));
+        document.getElementById('hidestart').style.display = "block";
+    }
 
     cell_played(clicked_cell, clicked_cell_i, clicked_cell_j){
         this.game_state[clicked_cell_i][clicked_cell_j] = this.curr_player;
@@ -38,35 +68,39 @@ class game {
 
     res_validation(played_cell_x, played_cell_y) {
         let round_won = false;
+        let i = 0, j = 0, k = 0;
+
         let win_arr_r = [];
         let win_arr_c = [];
         let win_arr_d = [];
         let win_arr_ad = [];
         let win_arr = [];
+
         let cons_signs_r = 0;
         let cons_signs_c = 0;
         let cons_signs_d = 0;
         let cons_signs_ad = 0;
-        let i = 0, j = 0, k = 0;
-
-        //logika za koloni 
+        check_win();
+        //check collumns 
         if(round_won === false) {
+            //loop through (win_condition-1) cells behind and in front of the last played cell
             for(i = played_cell_y - (win_condition - 1); i <= played_cell_y + (win_condition - 1); i++) {
+                //skip iteration if index is out of bounds
                 if(i < 0 || i >= rows) {
                     continue;
                 }
                 if(this.game_state[i][played_cell_x] === this.curr_player) {
-                    //console.log("cons_signs_c: " + cons_signs_c + "  i: " + i);
                     cons_signs_c++;
                     let exists = win_arr_c.includes(Number((i*rows) + played_cell_x));
+                    //avoids index stacking I.E. [10, 11, 12, 12, 13]
                     if(!exists){
                         win_arr_c.push((i*rows) + played_cell_x);
                     }
-                    //console.log(win_arr);
                 } else {
                     win_arr_c = [];
                     cons_signs_c = 0;
                 }
+                //is the game won?
                 if(cons_signs_c === win_condition && win_arr_c.length === win_condition) { 
                     round_won = true;
                     win_arr = win_arr_c;
@@ -75,20 +109,18 @@ class game {
             }
         }
 
-        //logika za redove
+        //check rows
         if(round_won === false) {
             for(i = played_cell_x - (win_condition - 1); i <= played_cell_x + (win_condition - 1); i++) {
                 if(i < 0 || i >= rows) {
                     continue;
                 }
                 if(this.game_state[played_cell_y][i] === this.curr_player) {
-                    //console.log("cons_signs_r: " + cons_signs_r + "  i: " + i);
                     cons_signs_r++;
                     let exists = win_arr_r.includes(Number((played_cell_y*rows) + i));
                     if(!exists){
                         win_arr_r.push((played_cell_y*rows) + i);
                     }
-                    //console.log(win_arr);
                 } else {
                     win_arr_r = [];
                     cons_signs_r = 0;
@@ -101,7 +133,7 @@ class game {
             }
         }
 
-        // logika za diagonali
+        // check all possible diagonals
         if(round_won === false) {
             for(i = played_cell_x - (win_condition - 1),
                 j = played_cell_y - (win_condition - 1); i <= played_cell_x + (win_condition - 1),
@@ -128,7 +160,7 @@ class game {
             }
         }
 
-        // logika za antidiagonali
+        // check all possible antidiagonals
         if(round_won === false) {
             for(i = played_cell_x + (win_condition - 1),
                 j = played_cell_y - (win_condition - 1); i >= played_cell_x - (win_condition - 1),
@@ -144,11 +176,9 @@ class game {
                         win_arr_ad.push((j*rows) + i);
                     }
                 } else {
-                    console.log("cleaning")
                     win_arr_ad = [];
                     cons_signs_ad = 0;
                 }
-                if(this.curr_player === "X") console.log("i: " + i + "  j: " + j + "  ad:" + cons_signs_ad + "  arr: " + win_arr.length);
                 if(cons_signs_ad === win_condition && win_arr_ad.length === win_condition) { 
                     round_won = true;
                     win_arr = win_arr_ad;
@@ -157,8 +187,9 @@ class game {
             }
         }
 
+        // "freeze" (players cant play a cell until they restart)
+        // colors the winning combination in green
         if (round_won === true) {
-            console.log(win_arr);
             this.status_display.innerHTML = this.winmsg();
             win_arr.forEach(element => {
                 document.getElementById(element).style.backgroundColor = color_green;
@@ -166,10 +197,13 @@ class game {
             this.is_game_active = false;
             return;
         }
+
+        // if all cells have been played, but there is no
+        // winning combination -> draw
         let round_draw = true;
-        for(j = 0; j<rows; j++){
-            for(k = 0; k<rows; k++){
-                if(this.game_state[j][k] == ""){
+        for(j = 0; j < rows; j++){
+            for(k = 0; k < rows; k++){
+                if(this.game_state[j][k] === ""){
                     round_draw = false;
                     break;
                 }
@@ -180,6 +214,9 @@ class game {
             this.is_game_active = false;
             return;
         }
+
+        // if the round isnt won or a draw
+        // let the next player have a turn
         this.change_player();
     }
 
@@ -195,10 +232,10 @@ class game {
     }
 
     game_restart(){
-        // console.log(this.game_state)
+        // hard reset of the table
         this.is_game_active = true;
         this.curr_player = "X";
-        let i=0, j=0;
+        let i = 0, j = 0;
         for(i = 0; i < rows; i++){
             for(j = 0; j < rows; j++){
                 this.game_state[i][j] = "";
@@ -211,46 +248,25 @@ class game {
 };
 
 let ex_game;
-
-function create_grid() {
-    document.getElementById('hidestart').style.display = "none";
-    var Container = document.getElementsByClassName("grid");
-    Container.innerHTML = '';
-    while(rows <= 2 || !Number.isInteger(rows)){
+function get_parameters() {
+    while(rows <= 2 || !Number.isInteger(rows) || rows >= 100){
         rows = Number(prompt("Table Size:"));
     }
-    while(win_condition <= 2 || !Number.isInteger(win_condition)){
+    while(win_condition <= 2 || !Number.isInteger(win_condition) || win_condition > rows){
         win_condition = Number(prompt("Win Condition:"));
     }
-    let i = 0, j = 0;
     ex_game = new game();
-      
-    document.documentElement.style.setProperty("--columns-row", rows);
-    for (i = 0; i < rows ; i++) {
-        for(j = 0; j < rows; j++){
-            var div = document.createElement("div");
-            div.className = "cell";
-            div.id = (i*rows)+j;
-            div.setAttribute("cell-index", (i*rows)+j);
-            div.setAttribute("i", i);
-            div.setAttribute("j", j);
-            let wrapper = document.getElementsByClassName("grid");
-            wrapper[0].appendChild(div);
-        }
-    }
-    document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', (e) => {
-        ex_game.cell_click(e);
-        e.stopPropagation();
-    }));
-    document.getElementById('hidestart').style.display = "block";
+    ex_game.init();
 }
 
+// a function to quickly set up my game board (game_state)
+// as a 2d array (since js doesnt directly support it)
 function matrix(rows, cols, defaultValue){
-    var arr = [];
-    for(var i=0; i < rows; i++){
+    let arr = [];
+    for(let i = 0; i < rows; i++){
         arr.push([]);
         arr[i].push(new Array(cols));
-        for(var j=0; j < cols; j++){
+        for(var j = 0; j < cols; j++){
           arr[i][j] = defaultValue;
         }
     }

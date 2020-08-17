@@ -5,14 +5,14 @@
     <title>Tic Tac Toe</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body onload = create_grid()>
-    <div class="grid"></div>
-    <h1 class="status"></h2>
-
-    <div class="btn_container">
-        <button id="hidestart" class="restart_btn" onclick="ex_game.game_restart()" style="text-align: center !important;">Restart</button>
+<body onload = get_parameters() style = "display: flex; justify-content: center;">
+    <div class="everything">
+        <div class="grid"></div>
+        <h2 class="status"></h2>
+        <div class="btn_container">
+            <button id="hidestart" class="restart_btn" onclick="ex_game.game_restart()" style="text-align: center !important;">Restart</button>
+        </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
