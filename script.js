@@ -67,74 +67,35 @@ class game {
     }
 
     res_validation(played_cell_x, played_cell_y) {
-        let round_won = false;
         let i = 0, j = 0, k = 0;
 
-        let win_arr_r = [];
-        let win_arr_c = [];
-        let win_arr_d = [];
-        let win_arr_ad = [];
-        let win_arr = [];
+        let round_won_obj = {round_won: false};
+        let win_arrs = {win_arr_r: [], win_arr_c: [], win_arr_d: [], win_arr_ad: []}
+        let cons_signs = {cons_signs_r: 0, cons_signs_c: 0, cons_signs_d: 0, cons_signs_ad: 0};
 
-        let cons_signs_r = 0;
-        let cons_signs_c = 0;
-        let cons_signs_d = 0;
-        let cons_signs_ad = 0;
-        check_win();
         //check collumns 
-        if(round_won === false) {
+        if(round_won_obj.round_won === false) {
             //loop through (win_condition-1) cells behind and in front of the last played cell
             for(i = played_cell_y - (win_condition - 1); i <= played_cell_y + (win_condition - 1); i++) {
-                //skip iteration if index is out of bounds
-                if(i < 0 || i >= rows) {
+                if(i < 0 || i >= rows) {  //skip iteration if index is out of bounds
                     continue;
                 }
-                if(this.game_state[i][played_cell_x] === this.curr_player) {
-                    cons_signs_c++;
-                    let exists = win_arr_c.includes(Number((i*rows) + played_cell_x));
-                    //avoids index stacking I.E. [10, 11, 12, 12, 13]
-                    if(!exists){
-                        win_arr_c.push((i*rows) + played_cell_x);
-                    }
-                } else {
-                    win_arr_c = [];
-                    cons_signs_c = 0;
-                }
-                //is the game won?
-                if(cons_signs_c === win_condition && win_arr_c.length === win_condition) { 
-                    round_won = true;
-                    win_arr = win_arr_c;
-                    break;
-                }
+                this.check_win('c', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
             }
         }
 
         //check rows
-        if(round_won === false) {
+        if(round_won_obj.round_won === false) {
             for(i = played_cell_x - (win_condition - 1); i <= played_cell_x + (win_condition - 1); i++) {
                 if(i < 0 || i >= rows) {
                     continue;
                 }
-                if(this.game_state[played_cell_y][i] === this.curr_player) {
-                    cons_signs_r++;
-                    let exists = win_arr_r.includes(Number((played_cell_y*rows) + i));
-                    if(!exists){
-                        win_arr_r.push((played_cell_y*rows) + i);
-                    }
-                } else {
-                    win_arr_r = [];
-                    cons_signs_r = 0;
-                }
-                if(cons_signs_r === win_condition && win_arr_r.length === win_condition) { 
-                    round_won = true;
-                    win_arr = win_arr_r;
-                    break;
-                }
+                this.check_win('r', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
             }
         }
 
         // check all possible diagonals
-        if(round_won === false) {
+        if(round_won_obj.round_won === false) {
             for(i = played_cell_x - (win_condition - 1),
                 j = played_cell_y - (win_condition - 1); i <= played_cell_x + (win_condition - 1),
                                                          j <= played_cell_y + (win_condition - 1); 
@@ -142,26 +103,12 @@ class game {
                 if(i < 0 || i >= rows || j < 0 || j >= rows) {
                     continue;
                 }
-                if(this.game_state[j][i] === this.curr_player) {
-                    cons_signs_d++;
-                    let exists = win_arr_d.includes(Number((j*rows) + i));
-                    if(!exists){
-                        win_arr_d.push((j*rows) + i);
-                    }
-                } else {
-                    win_arr_d = [];
-                    cons_signs_d = 0;
-                }
-                if(cons_signs_d === win_condition && win_arr_d.length === win_condition) { 
-                    round_won = true;
-                    win_arr = win_arr_d;
-                    break;
-                }
+                this.check_win('d', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
             }
         }
 
         // check all possible antidiagonals
-        if(round_won === false) {
+        if(round_won_obj.round_won === false) {
             for(i = played_cell_x + (win_condition - 1),
                 j = played_cell_y - (win_condition - 1); i >= played_cell_x - (win_condition - 1),
                                                          j <= played_cell_y + (win_condition - 1); 
@@ -169,33 +116,8 @@ class game {
                 if(i < 0 || i >= rows || j < 0 || j >= rows) {
                     continue;
                 }
-                if(this.game_state[j][i] === this.curr_player) {
-                    cons_signs_ad++;
-                    let exists = win_arr_ad.includes(Number((j*rows) + i));
-                    if(!exists){
-                        win_arr_ad.push((j*rows) + i);
-                    }
-                } else {
-                    win_arr_ad = [];
-                    cons_signs_ad = 0;
-                }
-                if(cons_signs_ad === win_condition && win_arr_ad.length === win_condition) { 
-                    round_won = true;
-                    win_arr = win_arr_ad;
-                    break;
-                }
+                this.check_win('ad', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
             }
-        }
-
-        // "freeze" (players cant play a cell until they restart)
-        // colors the winning combination in green
-        if (round_won === true) {
-            this.status_display.innerHTML = this.winmsg();
-            win_arr.forEach(element => {
-                document.getElementById(element).style.backgroundColor = color_green;
-            });
-            this.is_game_active = false;
-            return;
         }
 
         // if all cells have been played, but there is no
@@ -215,8 +137,6 @@ class game {
             return;
         }
 
-        // if the round isnt won or a draw
-        // let the next player have a turn
         this.change_player();
     }
 
@@ -244,6 +164,60 @@ class game {
         document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = "");
         document.querySelectorAll('.cell').forEach(cell => cell.style.backgroundColor = "")
         document.querySelector('.status').innerHTML = "";
+    }
+
+    check_win(way, signs_object, win_arr_object, round_won_obj, played_cell_x, played_cell_y, i, j){
+        let win_arr_func, cons_signs_func, if_arg_1, if_arg_2;
+        switch(way){
+            case 'r':
+                cons_signs_func = signs_object.cons_signs_r;
+                win_arr_func = win_arr_object.win_arr_r;
+                if_arg_1 = played_cell_y;
+                if_arg_2 = i;
+                break;
+            case 'c':
+                cons_signs_func = signs_object.cons_signs_c;
+                win_arr_func = win_arr_object.win_arr_c;
+                if_arg_1 = i;
+                if_arg_2 = played_cell_x;
+                break;
+            case 'd':
+                cons_signs_func = signs_object.cons_signs_d;
+                win_arr_func = win_arr_object.win_arr_d;
+                if_arg_1 = j;
+                if_arg_2 = i;
+                break;
+            case 'ad':
+                cons_signs_func = signs_object.cons_signs_ad;
+                win_arr_func = win_arr_object.win_arr_ad;
+                if_arg_1 = j;
+                if_arg_2 = i;
+                break;
+        }
+        if(this.game_state[if_arg_1][if_arg_2] === this.curr_player) {
+            cons_signs_func++;
+            let exists = win_arr_func.includes(Number((if_arg_1*rows) + if_arg_2));
+            if(!exists){
+                win_arr_func.push((if_arg_1*rows) + if_arg_2);
+            }
+        } else {
+            win_arr_func = [];
+            cons_signs_func = 0;
+        }
+        if(win_arr_func.length === win_condition) { 
+            round_won_obj.round_won = true;
+            this.win_color(win_arr_func);
+            return;
+        }
+    }
+
+    win_color(win_arr){
+        this.status_display.innerHTML = this.winmsg();            
+        this.is_game_active = false;
+        win_arr.forEach(element => {
+            document.getElementById(element).style.backgroundColor = color_green;
+        });
+        return;
     }
 };
 
