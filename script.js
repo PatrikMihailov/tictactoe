@@ -1,11 +1,11 @@
-let rows = 0;
+let grid_size = 0;
 let win_condition = 0;
 
 const color_green = "#a6ff4d";
 const color_red = "#ff6600";
 const color_blue = "#33ccff";
 
-class game {
+class Game {
     status_display;
     is_game_active;
     curr_player;
@@ -15,50 +15,40 @@ class game {
         this.status_display = document.querySelector('.status');
         this.is_game_active = true;
         this.curr_player = "X";
-        this.game_state = matrix(rows, rows, "");
+        this.game_state = matrix(grid_size, grid_size, " ");
     }
 
-    winmsg = () => `${this.curr_player} won!`;
-    drawmsg = () => `It's a draw!`;
+    win_msg = () => `${this.curr_player} won!`;
+    draw_msg = () => `It's a draw!`;
 
     init() {
         document.getElementById('hidestart').style.display = "none";
         var Container = document.getElementsByClassName("grid");
         Container.innerHTML = '';
         let i = 0, j = 0;
-        ex_game = new game();
+        ex_game = new Game();
           
-        document.documentElement.style.setProperty("--columns-row", rows);
-        for (i = 0; i < rows ; i++) {
-            for(j = 0; j < rows; j++){
-                var div = document.createElement("div");
+        document.documentElement.style.setProperty("--columns-row", grid_size); 
+        for (i = 0; i < grid_size ; i++) { //Cell creation 
+            for(j = 0; j < grid_size; j++){
+                let div = document.createElement("div");
                 div.className = "cell";
-                div.id = (i*rows)+j;
-                div.setAttribute("cell-index", (i*rows)+j);
+                div.id = (i*grid_size)+j;
+                div.setAttribute("cell-index", (i*grid_size)+j);
                 div.setAttribute("i", i);
                 div.setAttribute("j", j);
                 let wrapper = document.getElementsByClassName("grid");
                 wrapper[0].appendChild(div);
             }
         }
-        document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', (e) => {
+        document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', (e) => { //adding event (click) listeners to every cell
             ex_game.cell_click(e);
             e.stopPropagation();
         }));
         document.getElementById('hidestart').style.display = "block";
     }
-
-    cell_played(clicked_cell, clicked_cell_i, clicked_cell_j){
-        this.game_state[clicked_cell_i][clicked_cell_j] = this.curr_player;
-        clicked_cell.innerHTML = this.curr_player;
-        if(this.curr_player === "X"){
-            document.getElementById((clicked_cell_i*rows)+clicked_cell_j).style.backgroundColor = color_red;
-        } else if(this.curr_player === "O"){
-            document.getElementById((clicked_cell_i*rows)+clicked_cell_j).style.backgroundColor = color_blue;
-        }
-    }
     
-    change_player(){
+    change_player(){ 
         if(this.curr_player === "X"){
             this.curr_player = "O";
         } else {
@@ -66,154 +56,117 @@ class game {
         }
     }
 
-    res_validation(played_cell_x, played_cell_y) {
+    draw_check(){
+        let draw_flag = true, i = 0, j = 0;
+        for(i = 0; i < grid_size; i++){
+            for(j = 0; j < grid_size; j++){
+                if(this.game_state[i][j] === " "){
+                    draw_flag = false;
+                }
+            }
+        }
+        return draw_flag;
+    }
+
+    transform_played_cell(clicked_cell, clicked_cell_i, clicked_cell_j){ //transforming a cell to X/O
+        this.game_state[clicked_cell_i][clicked_cell_j] = this.curr_player;
+        clicked_cell.innerHTML = this.curr_player;
+
+        if(this.curr_player === "X"){
+            document.getElementById((clicked_cell_i*grid_size)+clicked_cell_j).style.backgroundColor = color_red;
+        } else if(this.curr_player === "O"){
+            document.getElementById((clicked_cell_i*grid_size)+clicked_cell_j).style.backgroundColor = color_blue;
+        }
+    }
+
+    res_validation(played_cell, played_cell_x, played_cell_y) {
         let i = 0, j = 0, k = 0;
+        let win_arr_ids = new Array();
+        //let check_arr_colls_size = (2 * win_condition) - 1;
+        let arg_i, arg_o, arg_j;
+        let check_arr = [[],[],[],[]]
 
-        let round_won_obj = {round_won: false};
-        let win_arrs = {win_arr_r: [], win_arr_c: [], win_arr_d: [], win_arr_ad: []}
-        let cons_signs = {cons_signs_r: 0, cons_signs_c: 0, cons_signs_d: 0, cons_signs_ad: 0};
+        for(let i = -(win_condition - 1); i < win_condition; i++) {
+            let x_check = played_cell_x + i;
+            let y_pluscheck = played_cell_y + i;
+            let y_minuscheck = played_cell_y - i;
 
-        //check collumns 
-        if(round_won_obj.round_won === false) {
-            //loop through (win_condition-1) cells behind and in front of the last played cell
-            for(i = played_cell_y - (win_condition - 1); i <= played_cell_y + (win_condition - 1); i++) {
-                if(i < 0 || i >= rows) {  //skip iteration if index is out of bounds
-                    continue;
-                }
-                this.check_win('c', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
+            const posHor = {x: played_cell_x + i, y: played_cell_y};
+            const posVer = {x: played_cell_x, y: played_cell_y + i};
+            const posDiag = {x: played_cell_x + i, y: played_cell_y + i};
+            const posADiag = {x: played_cell_x + i, y: played_cell_y - i};
+
+            if(posHor.x >= 0 && posHor.x < grid_size && posHor.y >= 0 && posHor.y < grid_size){
+                check_arr[0].push(posHor);
             }
+            if(posVer.x >= 0 && posVer.x < grid_size && posVer.y >= 0 && posVer.y < grid_size){
+                check_arr[1].push(posVer);
+            }
+            if(posDiag.x >= 0 && posDiag.x < grid_size && posDiag.y >= 0 && posDiag.y < grid_size){
+                check_arr[2].push(posDiag);
+            }
+            if(posADiag.x >= 0 && posADiag.x < grid_size && posADiag.y >= 0 && posADiag.y < grid_size){
+                check_arr[3].push(posADiag);
+            }
+
         }
 
-        //check rows
-        if(round_won_obj.round_won === false) {
-            for(i = played_cell_x - (win_condition - 1); i <= played_cell_x + (win_condition - 1); i++) {
-                if(i < 0 || i >= rows) {
-                    continue;
-                }
-                this.check_win('r', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
-            }
-        }
+        //CHECKING X-Y VALUES
+        for (let i = 0; i < 4; i++) {
+            for(let k = 0; k < check_arr[i].length; k++){
+                
+                let totalProps = check_arr[i].reduce((a, obj) => a + Object.keys(obj).length, 0);
+                totalProps /= 2;  
+                let curr_x = check_arr[i][k].x;
+                let curr_y = check_arr[i][k].y;
 
-        // check all possible diagonals
-        if(round_won_obj.round_won === false) {
-            for(i = played_cell_x - (win_condition - 1),
-                j = played_cell_y - (win_condition - 1); i <= played_cell_x + (win_condition - 1),
-                                                         j <= played_cell_y + (win_condition - 1); 
-                                                                                        i++, j++) { 
-                if(i < 0 || i >= rows || j < 0 || j >= rows) {
-                    continue;
-                }
-                this.check_win('d', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
-            }
-        }
-
-        // check all possible antidiagonals
-        if(round_won_obj.round_won === false) {
-            for(i = played_cell_x + (win_condition - 1),
-                j = played_cell_y - (win_condition - 1); i >= played_cell_x - (win_condition - 1),
-                                                         j <= played_cell_y + (win_condition - 1); 
-                                                                                        i--, j++) { 
-                if(i < 0 || i >= rows || j < 0 || j >= rows) {
-                    continue;
-                }
-                this.check_win('ad', cons_signs, win_arrs, round_won_obj, played_cell_x, played_cell_y, i, j);
-            }
-        }
-
-        // if all cells have been played, but there is no
-        // winning combination -> draw
-        let round_draw = true;
-        for(j = 0; j < rows; j++){
-            for(k = 0; k < rows; k++){
-                if(this.game_state[j][k] === ""){
-                    round_draw = false;
-                    break;
+                if(this.game_state[curr_y][curr_x] === this.curr_player && totalProps >= win_condition){
+                    let cell_id = (grid_size * curr_y) + curr_x;
+                    if(win_arr_ids.includes(cell_id) === false) win_arr_ids.push(cell_id);
+                    if(win_arr_ids.length === win_condition){
+                        this.win_color(win_arr_ids);
+                    }
+                } else { 
+                    win_arr_ids = new Array();
                 }
             }
         }
-        if (round_draw == true){
-            this.status_display.innerHTML = this.drawmsg();
-            this.is_game_active = false;
-            return;
-        }
 
-        this.change_player();
+        if(this.draw_check() === false){
+            this.change_player();          
+        } else {
+            this.status_display.innerHTML = this.draw_msg();
+        }
     }
 
     cell_click(clicked_cellEvent){
         const clicked_cell = clicked_cellEvent.target;
         let clicked_cell_i = parseInt(clicked_cell.getAttribute('i'));
         let clicked_cell_j = parseInt(clicked_cell.getAttribute('j'));
-        if(this.game_state[clicked_cell_i][clicked_cell_j] !== "" || !this.is_game_active) {
+        if(this.game_state[clicked_cell_i][clicked_cell_j] !== " " || !this.is_game_active) {
             return;
         }
-        this.cell_played(clicked_cell, clicked_cell_i, clicked_cell_j);
-        this.res_validation(clicked_cell_j, clicked_cell_i);
+        this.transform_played_cell(clicked_cell, clicked_cell_i, clicked_cell_j);
+        this.res_validation(clicked_cell, clicked_cell_j, clicked_cell_i);
     }
 
-    game_restart(){
-        // hard reset of the table
+    game_restart(){ // hard reset of the table
         this.is_game_active = true;
         this.curr_player = "X";
         let i = 0, j = 0;
-        for(i = 0; i < rows; i++){
-            for(j = 0; j < rows; j++){
-                this.game_state[i][j] = "";
+        for(i = 0; i < grid_size; i++){
+            for(j = 0; j < grid_size; j++){
+                this.game_state[i][j] = " ";
             }
         }
-        document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = "");
+        document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = " ");
         document.querySelectorAll('.cell').forEach(cell => cell.style.backgroundColor = "")
-        document.querySelector('.status').innerHTML = "";
+        document.querySelector('.status').innerHTML = " ";
     }
 
-    check_win(way, signs_object, win_arr_object, round_won_obj, played_cell_x, played_cell_y, i, j){
-        let win_arr_func, cons_signs_func, if_arg_1, if_arg_2;
-        switch(way){
-            case 'r':
-                cons_signs_func = signs_object.cons_signs_r;
-                win_arr_func = win_arr_object.win_arr_r;
-                if_arg_1 = played_cell_y;
-                if_arg_2 = i;
-                break;
-            case 'c':
-                cons_signs_func = signs_object.cons_signs_c;
-                win_arr_func = win_arr_object.win_arr_c;
-                if_arg_1 = i;
-                if_arg_2 = played_cell_x;
-                break;
-            case 'd':
-                cons_signs_func = signs_object.cons_signs_d;
-                win_arr_func = win_arr_object.win_arr_d;
-                if_arg_1 = j;
-                if_arg_2 = i;
-                break;
-            case 'ad':
-                cons_signs_func = signs_object.cons_signs_ad;
-                win_arr_func = win_arr_object.win_arr_ad;
-                if_arg_1 = j;
-                if_arg_2 = i;
-                break;
-        }
-        if(this.game_state[if_arg_1][if_arg_2] === this.curr_player) {
-            cons_signs_func++;
-            let exists = win_arr_func.includes(Number((if_arg_1*rows) + if_arg_2));
-            if(!exists){
-                win_arr_func.push((if_arg_1*rows) + if_arg_2);
-            }
-        } else {
-            win_arr_func = [];
-            cons_signs_func = 0;
-        }
-        if(win_arr_func.length === win_condition) { 
-            round_won_obj.round_won = true;
-            this.win_color(win_arr_func);
-            return;
-        }
-    }
-
-    win_color(win_arr){
-        this.status_display.innerHTML = this.winmsg();            
+    win_color(win_arr){ //color the winning sequence
         this.is_game_active = false;
+        this.status_display.innerHTML = this.win_msg();           
         win_arr.forEach(element => {
             document.getElementById(element).style.backgroundColor = color_green;
         });
@@ -223,21 +176,21 @@ class game {
 
 let ex_game;
 function get_parameters() {
-    while(rows <= 2 || !Number.isInteger(rows) || rows >= 100){
-        rows = Number(prompt("Table Size:"));
+    while(grid_size <= 2 || !Number.isInteger(grid_size) || grid_size >= 1000){
+        grid_size = Number(prompt("Table Size:"));
     }
-    while(win_condition <= 2 || !Number.isInteger(win_condition) || win_condition > rows){
+    while(win_condition <= 2 || !Number.isInteger(win_condition) || win_condition > grid_size){
         win_condition = Number(prompt("Win Condition:"));
     }
-    ex_game = new game();
+    ex_game = new Game();
     ex_game.init();
 }
 
-// a function to quickly set up my game board (game_state)
+// a function to quickly set up the game board (game_state)
 // as a 2d array (since js doesnt directly support it)
-function matrix(rows, cols, defaultValue){
+function matrix(grid_size, cols, defaultValue){
     let arr = [];
-    for(let i = 0; i < rows; i++){
+    for(let i = 0; i < grid_size; i++){
         arr.push([]);
         arr[i].push(new Array(cols));
         for(var j = 0; j < cols; j++){
