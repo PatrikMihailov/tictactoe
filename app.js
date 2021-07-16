@@ -11,18 +11,14 @@ let last_played_x, last_played_y;
 app.use(cors())
 app.use(express.json())
 
-app.get('/', (req, res) => {
-    res.send('sh revna ti kazvam')
-  })
-
 app.post('/update', (req, res) => {
     curr_player = req.body.cp;
     last_played_x = req.body.x;
     last_played_y = req.body.y;
 
     game_state[req.body.y][req.body.x] = curr_player;
-    console.log(game_state);
-    res.send(200);
+    let win_arr_server = res_validation(last_played_x, last_played_y);
+    res.send(win_arr_server)
 })
 
 app.post('/game_initialization', (req, res) => {
@@ -34,9 +30,9 @@ app.post('/game_initialization', (req, res) => {
     res.send(obj)
 })
 
-app.post('/res_validation', (req, res) => {
-    let win_arr_server = res_validation(last_played_x, last_played_y);
-    res.send(win_arr_server)
+app.get('/restart', (req, res) => {
+    game_state = matrix(grid_size, " ")
+    res.send(game_state);
   })
 
 app.listen(port, () => {

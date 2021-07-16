@@ -37,7 +37,6 @@ class Game {
       }) 
         const data = await res.json()
         this.game_state = data.gs;
-
         this.curr_player = data.cp;
         this.is_game_active = data.iga;
         this.status_display = document.querySelector('.status');
@@ -46,7 +45,6 @@ class Game {
         var Container = document.getElementsByClassName("grid");
         Container.innerHTML = '';
         let i = 0, j = 0;
-        ex_game = new Game();
           
         document.documentElement.style.setProperty("--columns-row", this.grid_size); 
         for (i = 0; i < this.grid_size ; i++) { //Cell creation 
@@ -54,15 +52,16 @@ class Game {
                 let div = document.createElement("div");
                 div.className = "cell";
                 div.id = (i*this.grid_size)+j;
-                div.setAttribute("cell-index", (i*this.grid_size)+j);
-                div.setAttribute("i", i);
-                div.setAttribute("j", j);
+                div.setAttribute("class-cell-index", (i*this.grid_size)+j);
+                div.setAttribute("class-y", i);
+                div.setAttribute("class-x", j);
                 let wrapper = document.getElementsByClassName("grid");
                 wrapper[0].appendChild(div);
             }
         }
         document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', (e) => { //adding event (click) listeners to every cell
-            ex_game.transform_cell_and_update(e);
+            
+            this.transform_cell_and_update(e);
             e.stopPropagation();
         }));
         document.getElementById('hidestart').style.display = "block";
@@ -82,9 +81,10 @@ class Game {
 
     transform_cell_and_update(clicked_cellEvent){ //transforming a cell to X/O
         const clicked_cell = clicked_cellEvent.target;
-        let clicked_cell_y = parseInt(clicked_cell.getAttribute('i'));
-        let clicked_cell_x = parseInt(clicked_cell.getAttribute('j'));
-        console.log(this.game_state)
+        let win_arr = [], player;
+        let clicked_cell_y = parseInt(clicked_cell.getAttribute('class-y'));
+        let clicked_cell_x = parseInt(clicked_cell.getAttribute('class-x'));
+
         if(this.game_state[clicked_cell_y][clicked_cell_x] !== " " || !this.is_game_active) {
             return;
         }
@@ -103,7 +103,19 @@ class Game {
                 y: clicked_cell_y,
                 cp: this.curr_player
             })
-          })
+          }) .then(res => res.json()).then(data => {
+            win_arr = data;
+            if(win_arr.length === this.win_condition) {
+                if(document.getElementById(win_arr[0]).innerHTML === "X"){
+                    player = "X"
+                } else if (document.getElementById(win_arr[0]).innerHTML === "O"){
+                    player = "O"
+                }
+                this.win_color(win_arr, player);
+            }
+        }).catch((e) => {
+            //empty array return
+        });
 
         if(this.curr_player === "X"){
             document.getElementById((clicked_cell_y*this.grid_size)+clicked_cell_x).style.backgroundColor = color_red;
@@ -111,43 +123,13 @@ class Game {
             document.getElementById((clicked_cell_y*this.grid_size)+clicked_cell_x).style.backgroundColor = color_blue;
         }
 
-        this.res_validation(clicked_cell_x, clicked_cell_y)
-    }
-
-    res_validation(played_cell_x, played_cell_y) {
-        let win_arr = [], player;
-        fetch('http://localhost:5000/res_validation', {
-            method: 'POST',
-            mode: 'cors', 
-            headers: {
-                'Content-Type': 'application/json'
-             },
-            // body: form
-            body: JSON.stringify({
-                x: played_cell_x,
-                y: played_cell_y,
-                gs: this.game_state,
-            })
-          }) .then(res => res.json()).then(data => {
-                win_arr = data;
-                if(win_arr.length === this.win_condition) {
-                    if(document.getElementById(win_arr[0]).innerHTML === "X"){
-                        player = "X"
-                    } else if (document.getElementById(win_arr[0]).innerHTML === "O"){
-                        player = "O"
-                    }
-                    this.win_color(win_arr, player);
-                }
-          }).catch((e) => {
-              //empty array return
-          });
-
         if(this.draw_check() === false){
             this.change_player();     
         } else {
             this.status_display.innerHTML = this.draw_msg();
         }
     }
+
 
     change_player(){
         if(this.curr_player === "X") {
@@ -160,12 +142,15 @@ class Game {
     game_restart(){ // hard reset of the table
         this.is_game_active = true;
         this.curr_player = "X";
-        let i = 0, j = 0;
-        for(i = 0; i < this.grid_size; i++){
-            for(j = 0; j < this.grid_size; j++){
-                this.game_state[i][j] = " ";
-            }
-        }
+        fetch('http://localhost:5000/restart', {
+            method: 'GET',
+            mode: 'cors', 
+            headers: {
+                'Content-Type': 'application/json'
+             }
+        }).then(res => res.json()).then(data => {
+            this.game_state = data;   
+        })
         document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = " ");
         document.querySelectorAll('.cell').forEach(cell => cell.style.backgroundColor = "")
         document.querySelector('.status').innerHTML = " ";
